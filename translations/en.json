@@ -1,0 +1,154 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "House Cleaning",
+        "description": "Tracks cleaning chores by room, each with its own cadence. Add chores afterwards with Add chore; each one takes a name, a room and how often it should be done.",
+        "data": {
+          "starter_set": "Start with a set of common chores"
+        },
+        "data_description": {
+          "starter_set": "Nine whole-house chores (vacuum, mop, dust, bathrooms, sheets, counters, fridge, towels, windows) with sensible cadences. Edit or delete them like any other chore."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "House Cleaning is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "House Cleaning",
+        "description": "How far ahead of its due date a chore is called \"due soon\".",
+        "data": {
+          "soon_days": "Due-soon window"
+        },
+        "data_description": {
+          "soon_days": "Days before the due date. 0 turns the window off."
+        }
+      }
+    },
+    "error": {
+      "invalid_soon_days": "Must be a whole number of days from 0 to 14."
+    }
+  },
+  "config_subentries": {
+    "chore": {
+      "title": "Chore",
+      "step": {
+        "add": {
+          "title": "Add a chore",
+          "description": "One job. Give it the room it belongs to and nothing else has to be filed; leave the room empty for a whole-house job.",
+          "data": {
+            "name": "Name",
+            "area": "Room",
+            "interval_days": "How often"
+          },
+          "data_description": {
+            "interval_days": "Days between doings. The chore is due this many days after it was last done."
+          }
+        },
+        "reconfigure": {
+          "title": "Edit chore",
+          "data": {
+            "name": "Name",
+            "area": "Room",
+            "interval_days": "How often"
+          },
+          "data_description": {
+            "area": "Changing the room here moves the chore's device; moving the device in the device page is undone on the next reload."
+          }
+        }
+      },
+      "error": {
+        "invalid_interval": "Must be a whole number of days from 1 to 365.",
+        "empty_name": "A chore needs a name."
+      },
+      "entry_type": "Chore",
+      "initiate_flow": {
+        "user": "Add chore"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_done": {
+        "name": "Last done"
+      },
+      "next_due": {
+        "name": "Next due"
+      },
+      "due_count": {
+        "name": "Due count"
+      },
+      "next_chore": {
+        "name": "Next chore"
+      }
+    },
+    "binary_sensor": {
+      "due": {
+        "name": "Due"
+      },
+      "overdue": {
+        "name": "Overdue"
+      }
+    },
+    "button": {
+      "done": {
+        "name": "Done"
+      }
+    }
+  },
+  "services": {
+    "mark_done": {
+      "name": "Mark done",
+      "description": "Records that a chore was done. Leave the date empty for now; give one to backfill. A date in the future is refused.",
+      "fields": {
+        "entity_id": {
+          "name": "Chore",
+          "description": "Any entity of the chore -- its Done button, say."
+        },
+        "done_at": {
+          "name": "Date",
+          "description": "When it was done. Empty means now."
+        }
+      }
+    },
+    "undo": {
+      "name": "Undo",
+      "description": "Removes the chore's most recent completion -- a mis-tap.",
+      "fields": {
+        "entity_id": {
+          "name": "Chore",
+          "description": "Any entity of the chore."
+        }
+      }
+    },
+    "set_interval": {
+      "name": "Set cadence",
+      "description": "Changes how often a chore should be done. A value that is not a whole number of days from 1 to 365 is refused rather than rounded.",
+      "fields": {
+        "entity_id": {
+          "name": "Chore",
+          "description": "Any entity of the chore."
+        },
+        "interval_days": {
+          "name": "How often",
+          "description": "Days between doings."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "not_a_chore": {
+      "message": "{entity_id} is not a House Cleaning chore, or the integration is not loaded. Nothing was changed."
+    },
+    "unknown_value": {
+      "message": "{field} is not a value House Cleaning accepts: {value}. Nothing was changed."
+    },
+    "nothing_to_undo": {
+      "message": "{name} has no recorded completion to undo."
+    }
+  }
+}

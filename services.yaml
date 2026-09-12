@@ -1,0 +1,41 @@
+# Selectors here are the UI's constraint only -- the enforced ones are
+# chores.py, because a board calling these actions never renders a field.
+mark_done:
+  fields:
+    entity_id:
+      required: true
+      example: button.vacuum_kitchen_floor_done
+      selector:
+        entity:
+          integration: house_cleaning
+    done_at:
+      required: false
+      example: "2026-09-11"
+      selector:
+        date:
+undo:
+  fields:
+    entity_id:
+      required: true
+      example: button.vacuum_kitchen_floor_done
+      selector:
+        entity:
+          integration: house_cleaning
+set_interval:
+  fields:
+    entity_id:
+      required: true
+      example: button.vacuum_kitchen_floor_done
+      selector:
+        entity:
+          integration: house_cleaning
+    interval_days:
+      required: true
+      example: 7
+      selector:
+        number:
+          min: 1
+          max: 365
+          step: 1
+          unit_of_measurement: days
+          mode: box

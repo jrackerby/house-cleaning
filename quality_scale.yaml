@@ -1,0 +1,71 @@
+# Self-assessment against the Home Assistant integration quality scale
+# (jrackerby/HA LAW.md §15). Rule names read from ALL_RULES in core's
+# script/hassfest/quality_scale.py at 2026.9 -- hassfest never checks a custom
+# component against this file, and manifest.json declares no quality_scale
+# key because a tier declared there is a self-claim. Honest `todo`s.
+
+rules:
+  # --- Bronze ---
+  action-setup: done  # services registered in async_setup, resolved at call time
+  appropriate-polling: done  # 5 min: a midnight-rollover latency budget, not a poll
+  brands: todo  # no brand/ yet
+  common-modules: done  # coordinator.py, entity.py
+  config-flow: done
+  config-flow-test-coverage: done  # tests/e2e: user step (starter set), subentry add/reconfigure, invalid values
+  dependency-transparency: done  # no requirements
+  docs-actions: done  # README
+  docs-conditions: done  # none provided
+  docs-triggers: done  # none provided
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
+  entity-event-setup: done  # CoordinatorEntity only
+  entity-unique-id: done  # f"{entry_id}_{subentry_id}_{key}" -- never the name
+  has-entity-name: done
+  runtime-data: done  # entry.runtime_data, typed HouseCleaningConfigEntry
+  test-before-configure: todo
+  # ^ DELIBERATE DEVIATION: nothing to test a connection to. A check that
+  #   exercised a different channel than the one used would certify nothing.
+  test-before-setup: done  # async_config_entry_first_refresh
+  unique-config-entry: done  # single_config_entry
+
+  # --- Silver ---
+  action-exceptions: done  # every refusal is a translated ServiceValidationError
+  config-entry-unloading: done
+  docs-configuration-parameters: done
+  docs-installation-parameters: done
+  entity-unavailable: done  # never: no source can be unreachable; `never` is a named state
+  integration-owner: done
+  log-when-unavailable: done  # vacuously
+  parallel-updates: done  # PARALLEL_UPDATES = 0 on every platform
+  reauthentication-flow: done  # no credentials
+  test-coverage: done
+  # ^ tests/ covers the rule with core absent; tests/e2e covers the real
+  #   layout against real core: setup, devices in areas, every entity, the
+  #   button, all three actions with their refusals, both flows.
+
+  # --- Gold / Platinum: not targeted; listed so the gaps stay visible ---
+  devices: done  # a device per chore, in its room; one roll-up device
+  diagnostics: todo
+  discovery: todo  # nothing to discover
+  discovery-update-info: todo
+  docs-data-update: done  # README: Storage
+  docs-examples: todo
+  docs-known-limitations: done
+  docs-supported-devices: done  # none, deliberately
+  docs-supported-functions: done
+  docs-troubleshooting: todo
+  docs-use-cases: done
+  dynamic-devices: done  # a chore is a subentry; the entry reloads on change
+  entity-category: todo
+  entity-device-class: done  # TIMESTAMP on both dated sensors
+  entity-disabled-by-default: todo
+  entity-translations: done  # translation_key on every entity
+  exception-translations: done  # every ServiceValidationError carries a key
+  icon-translations: todo
+  inject-websession: todo  # no HTTP session
+  reconfiguration-flow: done  # subentry reconfigure; options flow for the window
+  repair-issues: todo
+  stale-devices: done  # async_remove_config_entry_device
+  strict-typing: todo
+  async-dependency: done

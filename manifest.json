@@ -1,0 +1,16 @@
+{
+  "domain": "house_cleaning",
+  "name": "House Cleaning",
+  "codeowners": [
+    "@jrackerby"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/jrackerby/house-cleaning",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/jrackerby/house-cleaning/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.1.0"
+}
