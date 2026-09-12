@@ -209,4 +209,3 @@ class HouseCleaningCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @staticmethod
     def as_datetime(value) -> datetime | None:
         return dt_util.parse_datetime(value) if value else None
-
