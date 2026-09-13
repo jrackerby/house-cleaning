@@ -1,12 +1,25 @@
 """The real layout against real core: entry + subentries -> entities -> writes."""
-from datetime import date, timedelta
+from datetime import timedelta
 
 import pytest
 from homeassistant.config_entries import ConfigSubentryData
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+
+def _today():
+    """The calendar the integration itself keeps.
+
+    NOT ``date.today()``: that is the runner's clock, which is UTC in CI, while
+    the coordinator dates everything with ``dt_util.now().date()`` under the
+    fixture's time zone. The two disagree by a day for the hours where UTC
+    and HA-local straddle midnight, and a backfill built on the wrong one
+    read ``days_until`` off by one only in the evening (#1).
+    """
+    return dt_util.now().date()
 
 DOMAIN = "house_cleaning"
 
@@ -64,7 +77,7 @@ async def test_done_button_then_services(hass: HomeAssistant):
     assert hass.states.get("sensor.house_cleaning_next_chore").state == "Vacuum kitchen floor"
 
     # backfill 10 days ago -> latest stays today; history has 2
-    ten_ago = (date.today() - timedelta(days=10)).isoformat()
+    ten_ago = (_today() - timedelta(days=10)).isoformat()
     await hass.services.async_call(DOMAIN, "mark_done", {"entity_id": "sensor.vacuum_kitchen_floor_next_due", "done_at": ten_ago}, blocking=True)
     await hass.async_block_till_done()
     assert hass.states.get("sensor.vacuum_kitchen_floor_last_done").attributes["done_count"] == 2
@@ -80,7 +93,7 @@ async def test_done_button_then_services(hass: HomeAssistant):
 
     # a future date is refused, a bad interval is refused, a not-a-chore is refused
     with pytest.raises(ServiceValidationError):
-        await hass.services.async_call(DOMAIN, "mark_done", {"entity_id": "button.vacuum_kitchen_floor_done", "done_at": (date.today() + timedelta(days=1)).isoformat()}, blocking=True)
+        await hass.services.async_call(DOMAIN, "mark_done", {"entity_id": "button.vacuum_kitchen_floor_done", "done_at": (_today() + timedelta(days=1)).isoformat()}, blocking=True)
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(DOMAIN, "set_interval", {"entity_id": "button.vacuum_kitchen_floor_done", "interval_days": 0}, blocking=True)
     with pytest.raises(ServiceValidationError):
@@ -94,7 +107,7 @@ async def test_done_button_then_services(hass: HomeAssistant):
 
 async def test_overdue_after_backfill(hass: HomeAssistant):
     await _setup(hass)
-    await hass.services.async_call(DOMAIN, "mark_done", {"entity_id": "button.clean_windows_done", "done_at": (date.today() - timedelta(days=100)).isoformat()}, blocking=True)
+    await hass.services.async_call(DOMAIN, "mark_done", {"entity_id": "button.clean_windows_done", "done_at": (_today() - timedelta(days=100)).isoformat()}, blocking=True)
     await hass.async_block_till_done()
     nd = hass.states.get("sensor.clean_windows_next_due")
     assert nd.attributes["status"] == "overdue" and nd.attributes["days_until"] == -10
