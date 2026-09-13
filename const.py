@@ -23,6 +23,12 @@ STATUSES = (STATUS_NEVER, STATUS_OVERDUE, STATUS_DUE, STATUS_SOON, STATUS_OK)
 # The two statuses that put a chore on today's list.
 DUE_STATUSES = (STATUS_OVERDUE, STATUS_DUE)
 
+# The statuses that leave a chore UNCHECKED on the to-do list -- wider than
+# DUE_STATUSES on purpose. Never-done is on it because checking it off is
+# the only way it gets an anchor; soon is on it because surfacing a chore
+# ahead of its day is what the soon window is for. Only `ok` is checked.
+LISTED_STATUSES = (STATUS_NEVER, STATUS_OVERDUE, STATUS_DUE, STATUS_SOON)
+
 CONF_NAME = "name"
 CONF_AREA = "area"
 CONF_INTERVAL = "interval_days"

@@ -154,3 +154,112 @@ async def test_subentry_flow_add_and_reconfigure(hass: HomeAssistant):
     await hass.async_block_till_done()
     row = er.async_get(hass).async_get("button.scrub_tub_done")
     assert dr.async_get(hass).async_get(row.device_id).area_id == "bath_1_all"
+
+
+# -- the to-do list --------------------------------------------------------
+
+async def _items(hass: HomeAssistant, **kw) -> dict[str, dict]:
+    """The list as `todo.get_items` returns it, keyed by summary."""
+    resp = await hass.services.async_call("todo", "get_items", {"entity_id": "todo.house_cleaning", **kw}, blocking=True, return_response=True)
+    return {i["summary"]: i for i in resp["todo.house_cleaning"]["items"]}
+
+
+async def test_todo_list_view(hass: HomeAssistant):
+    """One item per chore; never/overdue/due/soon unchecked, ok checked."""
+    await _setup(hass)
+    assert hass.states.get("todo.house_cleaning").state == "2"  # both never done
+    items = await _items(hass)
+    assert set(items) == {"Vacuum kitchen floor", "Clean windows"}
+    v = items["Vacuum kitchen floor"]
+    assert v["status"] == "needs_action" and "due" not in v
+    assert v["description"] == "every 7 days · never done"
+
+    # done today -> checked, due in 7 days, description carries the date
+    await hass.services.async_call("button", "press", {"entity_id": "button.vacuum_kitchen_floor_done"}, blocking=True)
+    await hass.async_block_till_done()
+    assert hass.states.get("todo.house_cleaning").state == "1"
+    v = (await _items(hass))["Vacuum kitchen floor"]
+    assert v["status"] == "completed"
+    assert v["due"] == (_today() + timedelta(days=7)).isoformat()
+    assert v["description"] == f"every 7 days · last done {_today().isoformat()}"
+    assert v["completed"] is not None
+
+    # inside the soon window (2 days) -> back on the list, still with a due date
+    await hass.services.async_call(DOMAIN, "undo", {"entity_id": "button.vacuum_kitchen_floor_done"}, blocking=True)
+    await hass.services.async_call(DOMAIN, "mark_done", {"entity_id": "button.vacuum_kitchen_floor_done", "done_at": (_today() - timedelta(days=6)).isoformat()}, blocking=True)
+    await hass.async_block_till_done()
+    v = (await _items(hass))["Vacuum kitchen floor"]
+    assert v["status"] == "needs_action" and v["due"] == (_today() + timedelta(days=1)).isoformat()
+    assert hass.states.get("sensor.house_cleaning_due_count").state == "0"  # soon is listed, not due
+
+    # the sensor and the list disagree on `never` by design: listed, not counted
+    assert hass.states.get("todo.house_cleaning").state == "2"
+    assert (await _items(hass, status="completed")) == {}
+
+
+async def test_todo_check_uncheck_rename(hass: HomeAssistant):
+    await _setup(hass)
+    # checking records a completion now
+    await hass.services.async_call("todo", "update_item", {"entity_id": "todo.house_cleaning", "item": "Clean windows", "status": "completed"}, blocking=True)
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.clean_windows_last_done").attributes["done_count"] == 1
+    assert hass.states.get("sensor.clean_windows_next_due").attributes["status"] == "ok"
+
+    # the frontend's checkbox tap echoes due and description back unchanged;
+    # that must land, not be refused as an edit
+    cur = (await _items(hass))["Clean windows"]
+    await hass.services.async_call("todo", "update_item", {"entity_id": "todo.house_cleaning", "item": cur["uid"], "rename": cur["summary"], "status": "needs_action", "due_date": cur["due"], "description": cur["description"]}, blocking=True)
+    await hass.async_block_till_done()
+    # ...and unchecking undid the completion
+    assert hass.states.get("sensor.clean_windows_next_due").attributes["status"] == "never"
+    assert hass.states.get("sensor.clean_windows_last_done").attributes["done_count"] == 0
+
+    # a status that is already the item's is a no-op, not a second undo
+    await hass.services.async_call("todo", "update_item", {"entity_id": "todo.house_cleaning", "item": "Clean windows", "status": "needs_action"}, blocking=True)
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.clean_windows_next_due").attributes["status"] == "never"
+
+    # a CHANGED due date is refused: it is derived, and no completion is invented
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call("todo", "update_item", {"entity_id": "todo.house_cleaning", "item": "Vacuum kitchen floor", "due_date": _today().isoformat()}, blocking=True)
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call("todo", "update_item", {"entity_id": "todo.house_cleaning", "item": "Vacuum kitchen floor", "description": "x"}, blocking=True)
+    assert hass.states.get("sensor.vacuum_kitchen_floor_next_due").attributes["status"] == "never"
+
+    # renaming renames the chore; the uid (subentry) and the entity ids are frozen
+    uid = (await _items(hass))["Vacuum kitchen floor"]["uid"]
+    await hass.services.async_call("todo", "update_item", {"entity_id": "todo.house_cleaning", "item": "Vacuum kitchen floor", "rename": " Vacuum the kitchen "}, blocking=True)
+    await hass.async_block_till_done()
+    items = await _items(hass)
+    assert "Vacuum kitchen floor" not in items and items["Vacuum the kitchen"]["uid"] == uid
+    assert hass.states.get("sensor.vacuum_kitchen_floor_next_due") is not None
+    # a blank rename never reaches the platform: core's own schema refuses it
+    import voluptuous as vol
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call("todo", "update_item", {"entity_id": "todo.house_cleaning", "item": "Vacuum the kitchen", "rename": "  "}, blocking=True)
+
+
+async def test_todo_add_item_and_no_delete(hass: HomeAssistant):
+    entry = await _setup(hass)
+    await hass.services.async_call("todo", "add_item", {"entity_id": "todo.house_cleaning", "item": "Clean the oven"}, blocking=True)
+    await hass.async_block_till_done()
+    sub = next(s for s in entry.subentries.values() if s.title == "Clean the oven")
+    assert sub.data == {"name": "Clean the oven", "interval_days": 7}
+    assert hass.states.get("button.clean_the_oven_done") is not None
+    assert (await _items(hass))["Clean the oven"]["status"] == "needs_action"
+
+    # a due date on add is refused for the same reason as on update
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call("todo", "add_item", {"entity_id": "todo.house_cleaning", "item": "Wash the car", "due_date": _today().isoformat()}, blocking=True)
+    assert not any(s.title == "Wash the car" for s in entry.subentries.values())
+
+    # no delete: removing an item, and clearing completed items, are both
+    # refused by core because the feature is not declared -- a chore's
+    # history goes with it, so that stays a Settings action
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call("todo", "remove_item", {"entity_id": "todo.house_cleaning", "item": "Clean the oven"}, blocking=True)
+    await hass.services.async_call("button", "press", {"entity_id": "button.clean_the_oven_done"}, blocking=True)
+    await hass.async_block_till_done()
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call("todo", "remove_completed_items", {"entity_id": "todo.house_cleaning"}, blocking=True)
+    assert len(entry.subentries) == 3

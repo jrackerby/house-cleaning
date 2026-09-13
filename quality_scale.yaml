@@ -42,7 +42,8 @@ rules:
   test-coverage: done
   # ^ tests/ covers the rule with core absent; tests/e2e covers the real
   #   layout against real core: setup, devices in areas, every entity, the
-  #   button, all three actions with their refusals, both flows.
+  #   button, all three actions with their refusals, the to-do list and its
+  #   writes and refusals, both flows.
 
   # --- Gold / Platinum: not targeted; listed so the gaps stay visible ---
   devices: done  # a device per chore, in its room; one roll-up device
@@ -50,7 +51,7 @@ rules:
   discovery: todo  # nothing to discover
   discovery-update-info: todo
   docs-data-update: done  # README: Storage
-  docs-examples: todo
+  docs-examples: done  # README: Dashboard examples, every YAML block parsed and the templates rendered live
   docs-known-limitations: done
   docs-supported-devices: done  # none, deliberately
   docs-supported-functions: done

@@ -18,6 +18,7 @@ PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
     Platform.SENSOR,
+    Platform.TODO,
 ]
 
 # Nothing here is configurable from YAML; the entry is the only way in.
