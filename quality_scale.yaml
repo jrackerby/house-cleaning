@@ -8,7 +8,7 @@ rules:
   # --- Bronze ---
   action-setup: done  # services registered in async_setup, resolved at call time
   appropriate-polling: done  # 5 min: a midnight-rollover latency budget, not a poll
-  brands: todo  # no brand/ yet
+  brands: done  # brand/ served by core's own BrandsIntegrationView; HACS reads brand/icon.png
   common-modules: done  # coordinator.py, entity.py
   config-flow: done
   config-flow-test-coverage: done  # tests/e2e: user step (starter set), subentry add/reconfigure, invalid values

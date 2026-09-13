@@ -1,3 +1,16 @@
+<p align="center">
+  <picture>
+    <!-- The wordmark is deep blue and vanishes on a dark ground, so which file
+         is the FALLBACK matters: HACS renders this README inside Home
+         Assistant's frontend, which is dark by default, and a renderer that
+         drops <source> lands on the <img>. The dark-safe variant is the img;
+         the light one is the opt-in source. The mark itself is identical in
+         both -- only the wordmark is lifted. -->
+    <source media="(prefers-color-scheme: light)" srcset="brand/logo.png">
+    <img src="brand/dark_logo.png" alt="House Cleaning" width="420">
+  </picture>
+</p>
+
 # House Cleaning
 
 Tracks household cleaning chores **by room**, each with its own cadence and a
@@ -29,7 +42,9 @@ anchor to be late against.
 
 ## Setup
 
-Settings → Devices & Services → Add integration → **House Cleaning**. The
+Install through HACS (custom repository `jrackerby/house-cleaning`, category
+Integration), restart, then Settings → Devices & Services → Add integration →
+**House Cleaning**. The
 one question is whether to seed a starter set: nine whole-house chores
 (vacuum, mop, dust, bathrooms, sheets, counters, fridge, towels, windows)
 with sensible cadences, editable or deletable like any other.
