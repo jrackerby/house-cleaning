@@ -149,6 +149,15 @@
     },
     "nothing_to_undo": {
       "message": "{name} has no recorded completion to undo."
+    },
+    "item_not_found": {
+      "message": "{item} is not a chore on this list. Nothing was changed."
+    },
+    "due_is_derived": {
+      "message": "The due date of {name} is its last completion plus its cadence and cannot be set directly. Change the cadence with house_cleaning.set_interval, or record when it was done with house_cleaning.mark_done. Nothing was changed."
+    },
+    "description_is_derived": {
+      "message": "The description of {name} is generated from its room, cadence and last completion and cannot be edited. Nothing was changed."
     }
   }
 }
